@@ -13,7 +13,7 @@ export type User = {
 }
 
 export function useMe() {
-  return useSWR<User | null>("/api/auth/me", (key) => apiGet<User | null>(key), {
+  return useSWR<User | null>("api/me", (key) => apiGet<User | null>(key), {
     revalidateOnFocus: true,
   })
 }
@@ -23,7 +23,7 @@ export function useCurrentUser() {
 }
 
 export async function login(payload: { email: string; password: string }) {
-  return apiPost<User>("/api/auth/login", payload)
+  return apiPost<User>("api/login", payload)
 }
 
 export async function signup(payload: {
@@ -32,12 +32,12 @@ export async function signup(payload: {
   password: string
   role: Role
 }) {
-  return apiPost<User>("/api/auth/signup", payload)
+  return apiPost<User>("api/signup", payload)
 }
 
 export async function logout() {
   // backend may accept POST /logout with empty body
-  return apiPost<{}>("/api/auth/logout", {})
+  return apiPost<{}>("api/logout", {})
 }
 
 export function useLogoutRedirect() {

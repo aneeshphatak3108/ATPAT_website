@@ -25,16 +25,42 @@ export default function LoginPage() {
     e.preventDefault()
     setError(null)
     setLoading(true)
+  
     try {
-      await apiPost("/api/auth/login", { email, password, role })
+      console.log("🟢 Sending:", { email, password, role })
+      const response = await fetch("http://127.0.0.1:5000/api/auth_routes/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include", // important if backend uses sessions
+        body: JSON.stringify({
+          email,
+          role,
+          password
+        })
+      });
+  
+      const result = await response.json()
+  
+      if (!response.ok) {
+        throw new Error(result.message || "Login failed")
+      }
+  
+      console.log("✅ Login success:", result.message)
+  
+      // optionally update local user state
       await mutate()
+  
+      // redirect on success
       router.push("/")
     } catch (err: any) {
+      console.error("Login error:", err)
       setError(err?.message || "Login failed")
     } finally {
       setLoading(false)
     }
-  }
+  }  
 
   return (
     <div className="mx-auto max-w-md">

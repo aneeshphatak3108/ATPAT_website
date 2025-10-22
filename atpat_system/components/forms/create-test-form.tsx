@@ -37,43 +37,48 @@ export default function CreateTestForm() {
       toast({ title: "Missing fields", description: "Please fill all required fields.", variant: "destructive" })
       return
     }
+  
     try {
       setSubmitting(true)
-      // 1) Create test
-      const created = await apiPost<CreateTestResponse>("/api/tests", {
-        name: testName || undefined,
-        parent_url: parentUrl,
-        duration_minutes: Number(duration),
-        login_window_start: new Date(loginStart).toISOString(),
-        login_window_end: new Date(loginEnd).toISOString(),
-        notes: notes || undefined,
-      })
-      const testId = created.id
-
-      // 2) Upload CSV if provided
+  
+      const formData = new FormData()
+      formData.append("testname", testName)
+      formData.append("parenturl", parentUrl)
+      formData.append("duration", String(duration))
+      formData.append("loginwindowstart", loginStart)
+      formData.append("loginwindowend", loginEnd)
+      formData.append("description", notes)
+      formData.append("send_invites", sendInvites ? "1" : "0")
+  
       if (csvFile) {
-        const fd = new FormData()
-        fd.append("file", csvFile) // backend should expect "file"
-        await apiUpload(`/api/tests/${testId}/students/upload-csv`, fd)
+        formData.append("file", csvFile)
       }
-
-      // 3) Send invites if opted-in
-      if (sendInvites) {
-        await apiPost(`/api/tests/${testId}/invites/send`, {})
+  
+      const res = await fetch("http://127.0.0.1:5000/api/test_routes/createtest", {
+        method: "POST",
+        body: formData,
+        credentials: "include"
+      })
+  
+      const data = await res.json()
+  
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to create test")
       }
-
-      toast({ title: "Test created", description: "Your test has been created successfully." })
-      router.push(`/tests/${testId}`)
+  
+      toast({ title: "Test created", description: data.message })
+      router.push("/tests") // or wherever you want to navigate
     } catch (err: any) {
       toast({
         title: "Error",
-        description: err?.message || "Something went wrong while creating the test.",
+        description: err?.message || "Something went wrong",
         variant: "destructive",
       })
     } finally {
       setSubmitting(false)
     }
   }
+  
 
   return (
     <Card asChild>

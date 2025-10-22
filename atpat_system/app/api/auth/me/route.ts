@@ -1,20 +1,26 @@
-import { NextResponse } from "next/server"
-import { getUserById, getUserIdBySession, publicUser } from "../../_auth/store"
-import { getSessionToken } from "../../_auth/session"
+// /app/api/me/route.ts
+import { NextRequest, NextResponse } from "next/server"
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const token = getSessionToken()
-    const userId = getUserIdBySession(token)
-    if (!userId) {
-      return NextResponse.json(null)
+    const res = await fetch("http://127.0.0.1:5000/api/auth_routes/me", {
+      method: "GET",
+      headers: {
+        cookie: req.headers.get("cookie") || "",
+      },
+      credentials: "include", // ✅ ensures the session cookie is respected
+    })
+
+    // copy cookies from Flask response back to browser (important!)
+    const response = NextResponse.json(await res.json(), { status: res.status })
+    const setCookie = res.headers.get("set-cookie")
+    if (setCookie) {
+      response.headers.set("set-cookie", setCookie)
     }
-    const user = getUserById(userId)
-    if (!user) {
-      return NextResponse.json(null)
-    }
-    return NextResponse.json(publicUser(user))
-  } catch (err: any) {
-    return NextResponse.json(null)
+
+    return response
+  } catch (err) {
+    console.error("Error in /api/me:", err)
+    return NextResponse.json({ message: "Server error" }, { status: 500 })
   }
 }
